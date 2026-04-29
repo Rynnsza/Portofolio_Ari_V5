@@ -26,3 +26,10 @@ dist/
 *.sln
 *.sw?
 *.env
+
+.env
+.env.local
+.env.production
+docs/
+dist/
+deploy.zip.zip
