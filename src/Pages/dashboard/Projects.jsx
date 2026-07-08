@@ -3,6 +3,7 @@ import { supabase } from "../../supabase";
 import {
   Plus, Trash2, Upload, FolderGit2, X, ImageIcon, ExternalLink, Github, Pencil,
 } from "lucide-react";
+import Swal from "sweetalert2";
 
 const Card = ({ children, className = "" }) => (
   <div className={`relative group ${className}`}>
@@ -242,12 +243,26 @@ const fetchProjects = async () => {
 
       if (error) throw error;
 
-      alert("Project created successfully!");
+      await Swal.fire({
+        title: "Success!",
+        text: "Project created successfully!",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
       setShowCreate(false);
       fetchProjects();
     } catch (error) {
       console.error("Error creating project:", error);
-      alert("Failed to create project: " + error.message);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to create project: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
     } finally {
       setUploading(false);
     }
@@ -276,19 +291,45 @@ const fetchProjects = async () => {
 
       if (error) throw error;
       
-      alert("Project updated successfully!");
+      await Swal.fire({
+        title: "Success!",
+        text: "Project updated successfully!",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
       setEditProject(null);
       fetchProjects();
     } catch (error) {
       console.error("Error updating project:", error);
-      alert("Failed to update project: " + error.message);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to update project: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
     } finally {
       setUploading(false);
     }
   };
 
   const deleteProject = async (id) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#374151",
+      confirmButtonText: "Yes, delete it!",
+      background: "#0a0a1a",
+      color: "#fff",
+    });
+
+    if (!result.isConfirmed) return;
     
     try {
       const { error } = await supabase
@@ -298,11 +339,25 @@ const fetchProjects = async () => {
 
       if (error) throw error;
       
-      alert("Project deleted successfully!");
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Project has been deleted.",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
       fetchProjects();
     } catch (error) {
       console.error("Error deleting project:", error);
-      alert("Failed to delete project: " + error.message);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to delete project: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
     }
   };
 

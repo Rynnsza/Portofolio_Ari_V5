@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Swal from "sweetalert2";
 
 const PAGE_SIZE = 10;
 
@@ -51,17 +52,77 @@ export default function Comments() {
   }, [filter, search]);
 
   const pin = async (id, value) => {
-    await supabase
-      .from("portfolio_comments")
-      .update({ is_pinned: value })
-      .eq("id", id);
-    fetchComments();
+    try {
+      const { error } = await supabase
+        .from("portfolio_comments")
+        .update({ is_pinned: value })
+        .eq("id", id);
+      if (error) throw error;
+      
+      await Swal.fire({
+        title: value ? "Pinned!" : "Unpinned!",
+        text: value ? "Comment pinned successfully!" : "Comment unpinned successfully!",
+        icon: "success",
+        toast: true,
+        position: "top-end",
+        timer: 2000,
+        showConfirmButton: false,
+        background: "#0a0a1a",
+        color: "#fff",
+      });
+      fetchComments();
+    } catch (error) {
+      console.error("Pin error:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to update pin status: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+    }
   };
 
   const remove = async (id) => {
-    if (!confirm("Delete this comment?")) return;
-    await supabase.from("portfolio_comments").delete().eq("id", id);
-    fetchComments();
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to delete this comment?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#374151",
+      confirmButtonText: "Yes, delete it!",
+      background: "#0a0a1a",
+      color: "#fff",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const { error } = await supabase.from("portfolio_comments").delete().eq("id", id);
+      if (error) throw error;
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Comment has been deleted.",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+      fetchComments();
+    } catch (error) {
+      console.error("Delete error:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to delete comment: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+    }
   };
 
   const pinnedCount = comments.filter((c) => c.is_pinned).length;

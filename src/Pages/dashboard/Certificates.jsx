@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from "../../supabase";
 import { Award, Upload, Trash2, ImageIcon, Plus } from 'lucide-react'
+import Swal from 'sweetalert2';
 
 const Card = ({ children, className = '' }) => (
   <div className={`relative group ${className}`}>
@@ -78,18 +79,81 @@ export default function Certificates() {
   const uploadImage = async () => {
     if (!file) return
     setUploading(true)
-    const fileName = `cert-${Date.now()}-${file.name}`
-    await supabase.storage.from('certificate-images').upload(fileName, file)
-    const { data } = supabase.storage.from('certificate-images').getPublicUrl(fileName)
-    await supabase.from('certificates').insert({ img: data.publicUrl })
-    setFile(null); setPreview(null); setUploading(false)
-    fetchCerts()
+    try {
+      const fileName = `cert-${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage.from('certificate-images').upload(fileName, file)
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('certificate-images').getPublicUrl(fileName)
+      const { error: insertError } = await supabase.from('certificates').insert({ img: data.publicUrl })
+      if (insertError) throw insertError
+
+      await Swal.fire({
+        title: "Success!",
+        text: "Certificate uploaded successfully!",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+
+      setFile(null); 
+      setPreview(null);
+      fetchCerts()
+    } catch (error) {
+      console.error("Upload error:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to upload certificate: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+    } finally {
+      setUploading(false)
+    }
   }
 
   const deleteCert = async (id) => {
-    if (!confirm('Delete this certificate?')) return
-    await supabase.from('certificates').delete().eq('id', id)
-    fetchCerts()
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to delete this certificate?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#374151",
+      confirmButtonText: "Yes, delete it!",
+      background: "#0a0a1a",
+      color: "#fff",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const { error } = await supabase.from('certificates').delete().eq('id', id)
+      if (error) throw error
+
+      await Swal.fire({
+        title: "Deleted!",
+        text: "Certificate has been deleted.",
+        icon: "success",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+      fetchCerts()
+    } catch (error) {
+      console.error("Delete error:", error);
+      await Swal.fire({
+        title: "Error!",
+        text: "Failed to delete certificate: " + error.message,
+        icon: "error",
+        background: "#0a0a1a",
+        color: "#fff",
+        confirmButtonColor: "#6366f1",
+      });
+    }
   }
 
   return (
